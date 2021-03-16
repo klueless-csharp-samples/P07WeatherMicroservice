@@ -2,24 +2,24 @@
 
 > P07 Weather Microservice is a simple webapi app with responsive page
 
-## Installation
+## Source: Creating a .NET 5 Microservice
 
-Add this line to your application's Gemfile:
+[YouTube](https://www.youtube.com/watch?v=MIJJCR3ndQQ&t=2164s)
 
-```ruby
-gem 'P07WeatherMicroservice'
-```
+## Development
 
-And then execute:
+### Build watchers
 
-```bash
-bundle install
-```
-
-Or install it yourself as:
+Build and run command line application of file change
 
 ```bash
-gem install P07WeatherMicroservice
+dotnet watch run
+```
+
+Build with automatic unit test execution
+
+```bash
+dotnet watch test
 ```
 
 ## Stories
@@ -44,34 +44,80 @@ Description for a basic example to be featured in the main README.MD file
 class SomeRuby; end
 ```
 
-## Development
+### My Local Development Setup
 
-Checkout the repo
+#### Global Tools
+
+Note, you only need to load these once
 
 ```bash
-git clone klueless-io/P07WeatherMicroservice
+# Tooling for entity framework 4
+dotnet tool install --global dotnet-ef
+
+# dotnet-format is a code formatter for dotnet that applies style preferences to a project or solution
+dotnet tool install -g dotnet-format
+
 ```
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests.
-
-You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+#### Docker compose for MsSQL 2019 and Postres 13
 
 ```bash
-bin/console
+cd ~/dev/docker
+# Run locally (if you need to test, otherwise)
+docker compose up
+# Run detached
+docker compose up -d
 
-Aaa::Bbb::Program.execute()
-# => ""
+# logs from docker folder
+docker-compose logs -f pg13
+docker-compose logs -f mssql2019
 ```
 
-`P07WeatherMicroservice` is setup with Guard, run `guard`, this will watch development file changes and run tests automatically, if successful, it will then run rubocop for style quality.
+#### Need to check logs from other development folder?
 
-To release a new version, update the version number in `version.rb`, build the gem and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```
+docker logs -f pg13
+docker logs -f mssql2019
+```
+
+#### Connect to Postgres
 
 ```bash
-gem build
-gem push rspec-usecases-?.?.??.gem
-# or push the latest gem
-ls *.gem | sort -r | head -1 | xargs gem push
+docker-compose exec -u postgres pg13 bash
+
+psql
+# List of databases
+\l
+```
+
+#### Connect to MsSQL
+
+```bash
+docker exec -it mssql2019 "bash"
+
+/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '[Password]'
+
+SELECT Name from sys.Databases
+GO
+```
+
+#### need to check environment?
+
+```
+docker exec -it pg13 env
+```
+
+### Add/update migrations
+
+```bash
+dotnet ef migrations add Initial
+dotnet ef migrations add Initial --context P02PgContext
+
+dotnet ef database update
+dotnet ef database update --context P02PgContext
+
+dotnet ef migrations add UpdatePerson
+dotnet ef database update
 ```
 
 ## Contributing
