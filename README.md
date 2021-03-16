@@ -6,6 +6,38 @@
 
 [YouTube](https://www.youtube.com/watch?v=MIJJCR3ndQQ&t=2164s)
 
+## Features of this project
+
+- Uses secret store for the ApiKey
+- Uses appsettings.json for the external web host
+- Provides an endpoint for getting the weather
+- Calls an external API (https://openweathermap.org/) for data and maps that data to records
+  - If the external API is down
+    - Will retry 7 times with power of two waiting period
+    - Will circuit break at 3 times with a wait of 10 seconds before retry so that DDOS by own clients is prevented
+- Provides an endpoint for getting health check on the microservice
+  - If the external API is down (via ping)
+    - Will report unhealthy
+- Turn on JSON provider for logging when in production
+
+## Screenshots
+
+### Api Call
+
+![Api Call](shot1.png)
+
+### External API Call
+
+![External API Call](shot2.png)
+
+### Health Check
+
+![Health Check](shot3.png)
+
+### Swagger
+
+![Swagger](shot4.png)
+
 ## Development
 
 ### Build watchers
@@ -13,6 +45,8 @@
 Build and run command line application of file change
 
 ```bash
+dotnet user-secrets set SettingsService:ApiKey {PutYourApiKey}
+
 dotnet watch run
 ```
 
