@@ -1,19 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using P07WeatherMicroservice.Services;
+using P07WeatherMicroservice.Models;
+using Polly;
+using System;
 
 namespace P07WeatherMicroservice
 {
-    public class Startup
+  public class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -25,12 +23,22 @@ namespace P07WeatherMicroservice
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.Configure<ServiceSettings>(Configuration.GetSection(nameof(ServiceSettings)));
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "P07WeatherMicroservice", Version = "v1" });
             });
+            // Handle the webservice being down, up to 6 retries with exponential time increase heading up to 2 minutes (2^6)
+            // Prevent denial of service from multiple clients hitting system by not allowing anything through for 10 seconds
+
+            services.AddHttpClient<WeatherClient>()
+                .AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+                .AddTransientHttpErrorPolicy(builder => builder.CircuitBreakerAsync(3, TimeSpan.FromSeconds(10)));
+
+                // .AddTransientHttpErrorPolicy(builder => builder.CircuitBreakerAsync(3, TimeSpan.FromSeconds(10)));
+            services.AddHealthChecks()
+              .AddCheck<ExternalEndpointHealthCheck>("OpenWeather");
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +58,7 @@ namespace P07WeatherMicroservice
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("/health");
             });
         }
     }
